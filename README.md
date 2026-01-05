@@ -1,7 +1,4 @@
 # Unity & JavaScript Toolbox
-
-A concise, practical README focused on Unity development and JavaScript tooling — compact tips, the Unity version used, a clean example AI helper, and recommended workflows for Unity multiplayer projects.
-
 [![Unity 6000.0.34f1](https://img.shields.io/badge/Unity-6000.0.34f1-blue.svg)]()
 [![Photon PUN](https://img.shields.io/badge/Photon-PUN-orange.svg)]()
 
