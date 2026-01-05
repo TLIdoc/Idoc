@@ -1,103 +1,101 @@
-# Project Name (Unity)
-A short, one-line tagline describing the project and what it does for Unity developers.
+# Unity & JavaScript Toolbox
 
-[![Unity Version](https://img.shields.io/badge/Unity-2021.3%2B-blue.svg)]()
-[![License](https://img.shields.io/badge/license-MIT-green.svg)]()
-[![Build Status](https://github.com/OWNER/REPO/actions/workflows/ci.yml/badge.svg)]()<!-- replace when CI exists -->
+A concise, practical README focused on Unity development and JavaScript tooling — compact tips, the Unity version used, a clean example AI helper, and recommended workflows for Unity multiplayer projects.
 
-Short description
-A concise paragraph that explains the project's purpose, who should use it, and its standout benefit.
+[![Unity 6000.0.34f1](https://img.shields.io/badge/Unity-6000.0.34f1-blue.svg)]()
+[![Photon PUN](https://img.shields.io/badge/Photon-PUN-orange.svg)]()
 
-Quick links
-- 🚀 Get started — Installation & usage below
-- 🎮 Demo — open Assets/Samples/ or Assets/Demo
-- 🧭 Docs — docs/ or GitHub Pages (link)
-- 🤝 Contributing — CONTRIBUTING.md
+About
+- This repo (or template) is centered on Unity development and complementary JavaScript tooling.
+- Use Unity for real-time game logic, rendering, physics, AI and networking; use JavaScript for editor tooling, build pipelines, web frontends, or Node-based servers and utilities.
+- Photon PUN experience: 3+ years working with PUN for multiplayer synchronization and room logic.
 
-Demo
-![demo screenshot](assets/screenshot.png)
+Quick setup
+- Clone and open with Unity Hub using the matching Editor version (6000.0.34f1).
+- Recommended: enable Visible Meta Files and Force Text serialization (Edit → Project Settings → Editor).
+- Use Git LFS for large binary assets (textures, audio, models).
 
-Features
-- Unity-ready components and prefabs
-- Lightweight and well-documented
-- Example scenes for quick testing
+Compact tips
+- Use Vector3.SqrMagnitude for distance comparisons when possible to avoid costly sqrt.
+- Cache frequently queried objects (avoid FindGameObjectsWithTag every frame).
+- Keep gameplay state deterministic where possible and reconcile via Photon for smooth multiplayer.
+- JavaScript is excellent for: editor automation (node + CLI + npm scripts), web dashboards, remote tools, and lightweight server tasks.
 
-Supported Unity versions
-- Tested with Unity 2021.3 LTS and above. (Adjust as needed)
+Sample C# helper (Find nearest player)
+- Cleaned and annotated version of the provided function. It finds the nearest GameObject tagged "Player" that has a PhotonView, with optional distance gating and performance-friendly suggestions.
 
-Installation (3 ways)
-1) Add as a UPM (Package Manager) package (recommended for packages)
-- In Unity: Window → Package Manager → + → Add package from git URL...
-- Paste: `https://github.com/OWNER/REPO.git#v1.0.0` or `https://github.com/OWNER/REPO.git?path=/Packages/com.yourcompany.package`
-- Wait for package to resolve, then open the sample scene at Assets/Samples/Example.unity
-
-2) Clone the repo (for contributions or full source)
-```bash
-git clone https://github.com/OWNER/REPO.git
-cd REPO
-# open the folder in Unity Hub
-```
-
-3) Import .unitypackage (if provided)
-- Assets → Import Package → Custom Package → choose the .unitypackage file
-
-Quick start
-- Open the Unity project with Unity Hub (select the matching Unity version).
-- Open Assets/Samples/ExampleScene.unity.
-- Press Play. Drag the provided prefab (Assets/YourPackage/Prefabs/MyPrefab.prefab) into the scene.
-
-Usage (example)
-C# minimal usage example:
 ```csharp
-using YourCompany.PackageNamespace;
+using UnityEngine;
+using Photon.Pun;
 
-public class ExampleUsage : MonoBehaviour
+public class EnemyAI : MonoBehaviour
 {
-    void Start()
+    public float keepPatrolDistance = 10f;
+    public bool isChasing = false;
+
+    // Returns the Transform of the nearest player (or null).
+    Transform FindNearestPlayer()
     {
-        var component = gameObject.AddComponent<MyComponent>();
-        component.Configure("example");
+        var players = GameObject.FindGameObjectsWithTag("Player");
+        float bestDistSq = Mathf.Infinity;
+        Transform best = null;
+        Vector3 myPos = transform.position;
+
+        foreach (var p in players)
+        {
+            if (p == null) continue;
+
+            var pv = p.GetComponent<PhotonView>();
+            if (pv == null) continue;
+
+            // Use squared distance for performance
+            float distSq = (p.transform.position - myPos).sqrMagnitude;
+
+            // Skip players outside patrol range when not chasing
+            float keepDistSq = keepPatrolDistance * keepPatrolDistance;
+            if (!isChasing && distSq > keepDistSq) continue;
+
+            if (distSq < bestDistSq)
+            {
+                bestDistSq = distSq;
+                best = p.transform;
+            }
+        }
+
+        return best;
     }
 }
 ```
 
-Folder structure
-- Assets/ — Unity assets and sample scenes
-- Packages/ — (optional) UPM package layout (com.yourcompany.package)
-- ProjectSettings/ — Unity project settings (keep in repo)
-- docs/ — optional documentation or GitHub Pages content
-- .github/ — workflows, issue & PR templates, social-preview
+Performance notes
+- For frequent checks, maintain a list of active player Transforms (update on join/leave) instead of calling FindGameObjectsWithTag().
+- Consider running expensive scans at intervals (e.g., every 0.2–0.5s) instead of every frame.
+- If using Unity NavMesh for AI, combine nearest-player selection with navmesh path distance checks for better chasing behavior.
 
-Recommended Git + Unity settings
-- Enable Visible Meta Files and Force Text serialization in Unity Editor (Edit → Project Settings → Editor)
-- Use Git LFS for large binaries (textures, audio, models)
-- Add Unity .gitignore (https://github.com/github/gitignore/blob/main/Unity.gitignore)
-- Example .gitattributes entries for Unity:
-```
-*.png filter=lfs diff=lfs merge=lfs -text
-*.jpg filter=lfs diff=lfs merge=lfs -text
-*.mp3 filter=lfs diff=lfs merge=lfs -text
-*.fbx filter=lfs diff=lfs merge=lfs -text
-```
+JavaScript (JS) usage ideas
+- Editor automation: Node.js scripts to mass-edit assets, generate config files, or run precommit checks.
+- Build & deploy: npm scripts for automated packaging, exporting asset bundles, or CI tasks.
+- Web frontends: dashboards for game server status, player metrics, or remote configuration panels.
+- Server side: lightweight Node services for matchmaking telemetry or external webhooks.
 
-Contributing
-We welcome contributions! Please:
-- Read CONTRIBUTING.md and CODE_OF_CONDUCT.md
-- Keep scenes minimal; prefer prefabs and scripts for PRs
-- Run the sample scene locally to verify your change
-- Use small PRs focused on a single improvement
+Fantastic possibilities (short)
+- Procedural terrains and structures synced across clients with PUN events.
+- AI that plans and stalks players using combined navmesh pathing + predictive movement.
+- Web-based admin tools (JS) to inspect live matches and trigger dynamic events.
 
-Testing & CI
-- Set up automated Unity tests with GitHub Actions (Unity Test Runner) or your preferred CI.
-- Provide a badge at the top of this README when CI is configured.
+Repository layout suggestion
+- Assets/ — Unity runtime code, prefabs, scenes
+- Assets/Samples/ — demo scenes
+- Packages/ — optional UPM layout
+- .github/ — workflows, templates, social-preview
+- tools/ or scripts/ — JavaScript tooling and build scripts
+- docs/ — short docs and setup notes
 
-Releases & Versioning
-- Use semantic versioning (vMAJOR.MINOR.PATCH)
-- Tag releases on GitHub and provide changelog entries
-
-Support & Contact
-- Open an issue if you find a bug or want a feature
+License & contact
+- Choose a license (MIT recommended for open source). Add LICENSE at repo root.
 - Maintainer: @TLIdoc
 
-License
-This project is licensed under the MIT License — see LICENSE for details.
+If you want, I can:
+- Trim or expand any section,
+- Convert JS ideas into starter Node scripts,
+- Add a small GitHub Action to run Unity tests or build player artifacts.
